@@ -1,4 +1,4 @@
-import { Action, ActionPanel, List, Toast, closeMainWindow, showToast } from "@raycast/api";
+import { Action, ActionPanel, List, PopToRootType, Toast, showHUD, showToast } from "@raycast/api";
 import { useEffect, useState } from "react";
 import { VirtualNetwork, getVirtualNetworks, switchVirtualNetwork } from "./lib";
 
@@ -22,7 +22,7 @@ const ListItem = ({
       key={virtualNetwork.id}
       id={virtualNetwork.id}
       title={virtualNetwork.name}
-      subtitle={virtualNetwork.comment}
+      subtitle={virtualNetwork.description}
       actions={
         <ActionPanel title="Actions">
           <Action onAction={() => onSwitchVirtualNetwork(virtualNetwork.id)} title="Switch" />
@@ -45,27 +45,29 @@ export default () => {
   }, []);
 
   const onSwitchVirtualNetwork = async (id: string) => {
-    await switchVirtualNetwork(id);
-    await showToast({
-      style: Toast.Style.Success,
-      title: "Switched Virtual Network",
-    });
-    await closeMainWindow();
+    const result = await switchVirtualNetwork(id);
+    if (result) {
+      await showHUD("Switched Virtual Network", {
+        clearRootSearch: true,
+        popToRootType: PopToRootType.Immediate,
+      });
+    } else {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: "Failed to switch Virtual Network",
+      });
+    }
   };
   if (!isLoading && items.length === 0) {
     return (
-      <List
-        navigationTitle="Switch Virtual Network"
-        searchBarPlaceholder="Search Virtual Networks"
-        isLoading={isLoading}
-      >
+      <List searchBarPlaceholder="Search Virtual Networks" isLoading={isLoading}>
         <List.EmptyView title="No Virtual Networks found" />;
       </List>
     );
   }
 
   return (
-    <List navigationTitle="Switch Virtual Network" searchBarPlaceholder="Search Virtual Networks" isLoading={isLoading}>
+    <List searchBarPlaceholder="Search Virtual Networks" isLoading={isLoading}>
       {items.map((item: VirtualNetwork) => (
         <ListItem key={item.id} virtualNetwork={item} onSwitchVirtualNetwork={onSwitchVirtualNetwork} />
       ))}
